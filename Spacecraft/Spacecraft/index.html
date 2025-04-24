@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spacecraft</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="lib/http_cdn.jsdelivr.net_npm_vue@2.6.14_dist_vue.js"></script>
+</head>
+<body>
+<div id="app">
+  <div id="game-container">
+    <!-- Начальный экран -->
+    <div class="start-screen" v-if="!gameStarted">
+      <button class="settings-btn" @click="showSettings = true">Настройки</button>
+      <h1>Spacecraft</h1>
+      <div class="instructions">
+        <h3>Правила игры:</h3>
+        <p>Ваша задача - посадить космический корабль безопасно на поверхность планеты.</p>
+        <p>Условия успешной посадки:</p>
+        <ul style="text-align: left; margin: 10px 20px;">
+          <li>Скорость при касании ≤ {{ tempParams.maxLandingSpeed }} м/с</li>
+          <li>Время посадки ≤ {{ tempParams.timeLimit }} секунд</li>
+          <li>Используйте кнопку "Подача топлива" для торможения</li>
+        </ul>
+      </div>
+      <button class="start-btn" @click="startGame">Начать игру</button>
+    </div>
+
+    <!-- Модальное окно настроек -->
+    <div class="settings-modal" v-if="showSettings">
+      <h2>Настройки параметров</h2>
+      <div class="settings-group" v-for="(param, key) in settings" :key="key">
+        <label class="settings-label">{{ param.label }} ({{ param.unit }}):</label>
+        <input type="number"
+               v-model.number="tempParams[key]"
+               class="settings-input"
+               :min="param.min"
+               :step="param.step">
+      </div>
+      <button class="settings-btn" @click="saveSettings">Сохранить</button>
+    </div>
+
+    <!-- Игровой экран -->
+    <template v-if="gameStarted">
+      <!-- Космический корабль -->
+      <div class="spacecraft" :style="spacecraftStyle">
+        <img :src="currentShipImage" alt="">
+      </div>
+
+      <!-- Поверхность планеты -->
+      <div class="planet-surface"></div>
+
+      <!-- Панель начальных параметров -->
+      <div class="parameters-panel initial-params" v-if="!isMobileView">
+        <h3>Параметры миссии:</h3>
+        <div class="param-group">
+          <div class="param-label">Вес аппарата:</div>
+          <div class="param-value">{{ spacecraftMass }} кг</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Запас топлива:</div>
+          <div class="param-value">{{ fuelMass }} кг</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Расход топлива:</div>
+          <div class="param-value">{{ impulseWeight }} кг/с</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Скорость истечения:</div>
+          <div class="param-value">{{ exhaustVelocity }} м/с</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Макс. скорость:</div>
+          <div class="param-value">{{ maxLandingSpeed }} м/с</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Гравитация:</div>
+          <div class="param-value">{{ gravity }} м/с²</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Лимит времени:</div>
+          <div class="param-value">{{ timeLimit }} с</div>
+        </div>
+      </div>
+
+      <!-- Панель текущих параметров -->
+      <div class="parameters-panel current-params" v-if="!isMobileView">
+        <h3>Текущие показатели:</h3>
+        <div class="param-group">
+          <div class="param-label">Скорость:</div>
+          <div class="param-value">{{ Math.abs(currentSpeed).toFixed(2) }} м/с</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Прошло времени:</div>
+          <div class="param-value">{{ currentTime.toFixed(1) }} с</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Высота:</div>
+          <div class="param-value">{{ currentDistance.toFixed(1) }} м</div>
+        </div>
+        <div class="param-group">
+          <div class="param-label">Остаток топлива:</div>
+          <div class="param-value">{{ currentFuel.toFixed(1) }} кг</div>
+        </div>
+      </div>
+
+      <!-- Управление -->
+      <div class="control-buttons">
+        <button class="btn btn-primary" @click="togglePause">
+          {{ isPaused ? 'Продолжить' : 'Пауза' }}
+        </button>
+        <button class="btn btn-primary"
+                @mousedown="startThrust"
+                @mouseup="stopThrust"
+                @touchstart="startThrust"
+                @touchend="stopThrust">
+          Подача топлива
+        </button>
+      </div>
+
+      <!-- Результат -->
+      <div class="result-screen" v-if="gameEnded">
+        <h2>{{ resultMessage }}</h2>
+        <button class="start-btn" @click="restartGame">Играть снова</button>
+      </div>
+    </template>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
